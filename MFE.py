@@ -9,12 +9,8 @@ import parameters as par
 def Force(data, F):
     F[:]   = 0
     F[:]  -= par.ωj**2 * data.x 
-    for k in range(2):
-        F[:] -= np.real(par.dHij[:,k,k] * data.ρt[k,k])
-        for n in range(k+1, 2):
-            F[:] -= 2.0 * np.real(par.dHij[:,k,n] * data.ρt[k,n])
-    # par_sum = np.sum(par.dHij * data.ρt * 1.0, axis= 1).real
-    # F[:] -= np.sum(par_sum, axis = 1).real
+    par_sum = np.sum(par.dHij * data.ρt * 1.0, axis= 1).real
+    F[:] -= np.sum(par_sum, axis = 1).real
 
 # PROPAGATION
 @nb.jit(nopython=True, fastmath=True)
@@ -62,12 +58,11 @@ def run_traj(data):
     iskip = 0
     for st in range(data.nsteps):
         if (st % par.nskip == 0):
-
             ρ = data.ρt
             ρ = ρ.copy()
             data.ρw[iskip,:]  = ρ.reshape(1,2**2)
-            data.pos[iskip] = data.x[0]
-            data.forc[iskip] = data.F1[0]
+            # data.pos[iskip] = data.x[0]
+            # data.forc[iskip] = data.F1[0]
             iskip += 1
         VelVer(data)
         

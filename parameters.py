@@ -16,37 +16,36 @@ def model(M):
 
     return ε[M], ξ[M], β[M], ωc[M], Δ[M], N[M]  
 
-# DRUDE - LORENTZ SPECTRAL DENSITY
-# @nb.jit(nopython=True, fastmath=True)
-# def J_DrudeL(λ, γ, ω):
-#     return (2 * γ * λ * ω) / (ω**2 + γ**2)
+# OHMNIC SPECTRAL DENSITY
+@nb.jit(nopython=True, fastmath=True)
+def J_ohm(ω, ξ, ωc):
+    return np.pi/2 * ξ * ω * np.exp(-ω/ωc) 
 
 # BATH PARAMETERS
 @nb.jit(nopython=True, fastmath=True)
-def BathParam(ξ, ωc, ndof):   
-    ωm = 4.0
-    ω0 = ωc * ( 1-np.exp(-ωm) ) / ndof
+def BathParam(ω, ξ, ωc, ndof):   
+    # ωm = 4.0
+    # ω0 = ωc * ( 1-np.exp(-ωm) ) / ndof
+    # cj = np.zeros(( ndof ), dtype = np.complex128)
+    # ωj = np.zeros(( ndof ))
+    # for d in range(ndof):
+    #     ωj[d] =  -ωc * np.log(1 - (d+1)*ω0/ωc)
+    #     cj[d] =  np.sqrt(ξ * ω0) * ωj[d]  
     cj = np.zeros(( ndof ), dtype = np.complex128)
     ωj = np.zeros(( ndof ))
-    for d in range(ndof):
-        ωj[d] =  -ωc * np.log(1 - (d+1)*ω0/ωc)
-        cj[d] =  np.sqrt(ξ * ω0) * ωj[d]  
-    # for d in range(N):
-    #     ωj[d] = γD[0] * np.tan(np.pi/2 * (d - 1/2)/N)
-    #     cj[d] = 2 *(λD[0]/(2 * N))**0.5 * ωj[d]
-    # for k in range(len(λD)):
-    #     J = J_DrudeL(λD[k], γD[k], ω)    # Drude-Lorentz part
-    
-    #     Fω = np.zeros(len(ω))
-    #     for i in range(len(ω)):
-    #         Fω[i] = (4/np.pi) * np.sum(J[:i]/ω[:i]) * dω
+    dω = ω[1] - ω[0]
+    J = J_ohm(ω, ξ, ωc)    # Drude-Lorentz part
 
-    #     λs =  Fω[-1]
-    #     for i in range(N):
-    #         costfunc = np.abs(Fω-(((float(i)+0.5)/float(N))*λs))
-    #         m = np.argmin((costfunc))
-    #         ωj[k * N + i] = ω[m]
-    #     cj[k * N: (k+1) * N] = ωj[k * N: (k+1) * N] * ((λs/(2*float(N)))**0.5)
+    Fω = np.zeros(len(ω))
+    for i in range(len(ω)):
+        Fω[i] = (4/np.pi) * np.sum(J[:i]/ω[:i]) * dω
+
+    λs =  Fω[-1]
+    for i in range(ndof):
+        costfunc = np.abs(Fω-(((float(i)+0.5)/float(ndof))*λs))
+        m = np.argmin((costfunc))
+        ωj[i] = ω[m]
+    cj[:] = ωj[:] * ((λs/(2*float(ndof)))**0.5)
     return cj , ωj
 
 # CREATION OPERATOR
@@ -101,7 +100,8 @@ dtE      = dtN/Estep
 nskip    = 1 
 
 # BATH PARAMETERS ==============================
-cj, ωj = BathParam(ξ, ωc, ndof)
+ω = np.linspace(1E-20, 100 * ωc, 15000)
+cj, ωj = BathParam(ω, ξ, ωc, ndof)
 # print(cj[-1], ωj[-1]/cmtoau)
 # TIME INDEPENDENT FUNCTIONS ==============================
 Hel   = Hel_cons()

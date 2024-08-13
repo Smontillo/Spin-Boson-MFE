@@ -3,3 +3,4 @@
 *.err
 *.out
 tmpdir/
+__pycache__

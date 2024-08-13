@@ -21,8 +21,6 @@ def initR(data):
     σP = np.sqrt(ωj / (2 * np.tanh(0.5*β*ωj)))
     σx = σP/ωj
 
-    # data.x = np.array(np.loadtxt('/scratch/smontill/Simpkins/SemiClassical-NAMD/R.txt'))
-    # data.P = np.loadtxt('/scratch/smontill/Simpkins/SemiClassical-NAMD/P.txt')
     data.x = np.random.normal(loc=0.0, scale=1.0, size= len(ωj)) * σx
     data.P = np.random.normal(loc=0.0, scale=1.0, size= len(ωj)) * σP
     
